@@ -2,8 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ProductImage } from "@/components/products/ProductImage";
+import { JourneyPathCards } from "@/components/journey/JourneyPathCards";
 import { CATEGORIES } from "@/lib/constants";
-import { PRODUCTS } from "@/lib/products";
+import { JOURNEY } from "@/lib/journeys";
+import { formatPrice } from "@/lib/pricing";
+import {
+  CATEGORY_LABELS,
+  getRetailPrice,
+  getRetailProducts,
+} from "@/lib/products";
 
 const steps = [
   {
@@ -72,8 +79,15 @@ const categoryIcons: Record<string, React.ReactNode> = {
   ),
 };
 
+const categoryHref: Record<string, string> = {
+  apparel: "/shop?category=apparel",
+  gear: "/team/products?category=gear",
+  mouthguard: "/shop?category=mouthguard",
+  accessories: "/shop?category=accessories",
+};
+
 export default function HomePage() {
-  const featured = PRODUCTS.filter((p) => p.featured);
+  const shopFeatured = getRetailProducts().filter((p) => p.featured).slice(0, 4);
 
   return (
     <>
@@ -97,20 +111,21 @@ export default function HomePage() {
             Raise In Respect
           </h1>
           <p className="mb-10 max-w-xl text-lg text-white/70 sm:text-xl">
-            Custom Martial Arts Gear for Your Team
+            Custom martial arts gear — shop for yourself or outfit your entire
+            team.
           </p>
           <div className="flex flex-col gap-4 sm:flex-row">
-            <Button href="/contact" size="lg">
-              Start Your Order
+            <Button href={JOURNEY.shop.catalogPath} size="lg">
+              Shop for Yourself
             </Button>
-            <Button href="/products" variant="outline" size="lg">
-              Browse Products
+            <Button href={JOURNEY.team.basePath} variant="outline" size="lg">
+              Order for Your Team
             </Button>
           </div>
         </div>
       </section>
 
-      {/* Categories */}
+      <JourneyPathCards />
       <section className="bg-white px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-6xl">
           <div className="mb-12 text-center">
@@ -125,7 +140,7 @@ export default function HomePage() {
             {CATEGORIES.map((cat) => (
               <Link
                 key={cat.id}
-                href={`/products?category=${cat.id}`}
+                href={categoryHref[cat.id]}
                 className="group border border-rir-black/10 bg-rir-gray p-6 transition-colors hover:border-rir-red hover:bg-white"
               >
                 <div className="mb-4 text-rir-red transition-colors group-hover:text-rir-black">
@@ -148,10 +163,10 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl">
           <div className="mb-12 text-center">
             <p className="mb-2 text-xs font-bold uppercase tracking-widest text-rir-red">
-              Simple Process
+              Team Orders
             </p>
             <h2 className="text-3xl font-black uppercase tracking-tight text-rir-black sm:text-4xl">
-              How It Works
+              How Team Orders Work
             </h2>
           </div>
           <div className="grid gap-8 md:grid-cols-3">
@@ -178,23 +193,24 @@ export default function HomePage() {
           <div className="mb-12 flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div>
               <p className="mb-2 text-xs font-bold uppercase tracking-widest text-rir-red">
-                Popular Items
+                Shop Favorites
               </p>
               <h2 className="text-3xl font-black uppercase tracking-tight text-rir-black sm:text-4xl">
-                Featured Products
+                Popular in the Shop
               </h2>
             </div>
             <Link
-              href="/products"
+              href="/shop"
               className="text-sm font-semibold uppercase tracking-wider text-rir-red transition-colors hover:text-rir-black"
             >
-              View All &rarr;
+              Shop All &rarr;
             </Link>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {featured.map((product) => (
-              <div
+            {shopFeatured.map((product) => (
+              <Link
                 key={product.id}
+                href={JOURNEY.shop.productPath(product.id)}
                 className="group border border-rir-black/10 transition-colors hover:border-rir-red"
               >
                 <ProductImage
@@ -204,7 +220,7 @@ export default function HomePage() {
                 />
                 <div className="p-5">
                   <p className="mb-1 text-xs font-bold uppercase tracking-widest text-rir-red">
-                    {product.category}
+                    {CATEGORY_LABELS[product.category]}
                   </p>
                   <h3 className="mb-2 font-bold uppercase tracking-wide text-rir-black">
                     {product.name}
@@ -213,14 +229,14 @@ export default function HomePage() {
                     {product.description}
                   </p>
                   <p className="text-sm font-semibold text-rir-black">
-                    From ${product.basePrice}/unit
+                    {formatPrice(getRetailPrice(product))}
                     <span className="font-normal text-rir-muted">
                       {" "}
-                      · Min. {product.minQuantity}
+                      · Buy online
                     </span>
                   </p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -262,22 +278,17 @@ export default function HomePage() {
       <section className="bg-rir-red px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="mb-4 text-3xl font-black uppercase tracking-tight text-white sm:text-4xl">
-            Ready to Gear Up Your Team?
+            Outfit Your Team?
           </h2>
           <p className="mb-8 text-white/80">
-            Get a custom quote for your gym. No minimum commitment to inquire —
-            we&apos;ll work with your budget and timeline.
+            Bulk custom orders with your logo. Volume discounts up to 30% off.
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
-            <Button href="/contact" size="lg" variant="inverse">
-              Get a Quote
+            <Button href="/team" size="lg" variant="inverse">
+              Team Orders
             </Button>
-            <Button
-              href="/auth/register"
-              variant="outline"
-              size="lg"
-            >
-              Register Your Gym
+            <Button href="/shop" variant="outline" size="lg">
+              Shop Individual
             </Button>
           </div>
         </div>

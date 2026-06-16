@@ -4,10 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { CartButton } from "@/components/cart/CartButton";
+import { JourneySwitcher } from "@/components/journey/JourneySwitcher";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { Button } from "@/components/ui/Button";
+import { getJourneyFromPath } from "@/lib/journeys";
 
-const navLinks = [
-  { href: "/products", label: "Products" },
+const secondaryLinks = [
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ];
@@ -15,10 +18,12 @@ const navLinks = [
 export function Header() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user } = useAuth();
+  const journey = getJourneyFromPath(pathname);
 
   return (
     <header className="sticky top-0 z-50 border-b border-rir-black/10 bg-white">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:h-20 sm:px-6">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:h-20 sm:px-6">
         <Link href="/" className="flex shrink-0 items-center">
           <Image
             src="/logo.png"
@@ -30,8 +35,12 @@ export function Header() {
           />
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
-          {navLinks.map((link) => (
+        <div className="hidden md:block">
+          <JourneySwitcher />
+        </div>
+
+        <nav className="hidden items-center gap-6 lg:flex">
+          {secondaryLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -44,16 +53,19 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-4 md:flex">
+          <CartButton />
           <Link
-            href="/auth/login"
+            href={user ? "/account" : "/auth/login"}
             className="text-sm font-semibold uppercase tracking-wider text-rir-black transition-colors hover:text-rir-red"
           >
-            Log In
+            {user ? "Account" : "Log In"}
           </Link>
-          <Button href="/contact" size="sm">
-            Get a Quote
-          </Button>
+          {journey === "team" && (
+            <Button href="/contact" size="sm">
+              Get a Quote
+            </Button>
+          )}
         </div>
 
         <button
@@ -76,8 +88,11 @@ export function Header() {
 
       {menuOpen && (
         <div className="border-t border-rir-black/10 bg-white px-4 py-4 md:hidden">
+          <div className="mb-4">
+            <JourneySwitcher />
+          </div>
           <nav className="flex flex-col gap-4">
-            {navLinks.map((link) => (
+            {secondaryLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -89,12 +104,13 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
+            <CartButton />
             <Link
-              href="/auth/login"
+              href={user ? "/account" : "/auth/login"}
               onClick={() => setMenuOpen(false)}
               className="text-sm font-semibold uppercase tracking-wider text-rir-black"
             >
-              Log In
+              {user ? "Account" : "Log In"}
             </Link>
             <Button href="/contact" size="sm" className="w-full">
               Get a Quote

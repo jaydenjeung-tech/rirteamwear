@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
+import { LoginForm } from "@/components/auth/LoginForm";
 
 export const metadata: Metadata = {
   title: "Log In",
+  description: "Sign in to your RiR Teamwear account.",
 };
 
 export default function LoginPage() {
@@ -14,19 +15,21 @@ export default function LoginPage() {
           Log In
         </h1>
         <p className="mb-8 text-sm text-rir-muted">
-          Customer portal coming soon. In the meantime, contact us to place an order.
+          Sign in to track orders and check out faster.
         </p>
-        <div className="flex flex-col gap-3">
-          <Button href="/contact" className="w-full">
-            Get a Quote
-          </Button>
-          <Link
-            href="/"
-            className="text-center text-sm font-semibold uppercase tracking-wider text-rir-muted transition-colors hover:text-rir-red"
-          >
-            Back to Home
-          </Link>
-        </div>
+        <LoginForm />
+        <Link
+          href="/auth/register"
+          className="mt-6 block text-center text-sm font-semibold uppercase tracking-wider text-rir-muted transition-colors hover:text-rir-red"
+        >
+          Don&apos;t have an account? Create one
+        </Link>
+        <Link
+          href="/contact"
+          className="mt-3 block text-center text-xs font-semibold uppercase tracking-wider text-rir-muted transition-colors hover:text-rir-red"
+        >
+          Gym / team orders — Get a Quote
+        </Link>
       </div>
     </div>
   );

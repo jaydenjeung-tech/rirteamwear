@@ -4,6 +4,8 @@ export type ProductCategory =
   | "mouthguard"
   | "accessories";
 
+export type ProductAudience = "team" | "retail" | "both";
+
 export interface Product {
   id: string;
   name: string;
@@ -14,6 +16,9 @@ export interface Product {
   sizes: string[];
   imageUrl: string;
   featured?: boolean;
+  audience?: ProductAudience;
+  retailPrice?: number;
+  retailMinQuantity?: number;
 }
 
 export const PRODUCTS: Product[] = [
@@ -28,6 +33,9 @@ export const PRODUCTS: Product[] = [
     sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL"],
     imageUrl: "/products/custom-tshirt.png",
     featured: true,
+    audience: "both",
+    retailPrice: 28,
+    retailMinQuantity: 1,
   },
   {
     id: "rashguard",
@@ -40,6 +48,9 @@ export const PRODUCTS: Product[] = [
     sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL"],
     imageUrl: "/products/rashguard.png",
     featured: true,
+    audience: "both",
+    retailPrice: 48,
+    retailMinQuantity: 1,
   },
   {
     id: "team-hoodie",
@@ -52,6 +63,9 @@ export const PRODUCTS: Product[] = [
     sizes: ["S", "M", "L", "XL", "2XL", "3XL"],
     imageUrl: "/products/team-hoodie.png",
     featured: true,
+    audience: "both",
+    retailPrice: 58,
+    retailMinQuantity: 1,
   },
   {
     id: "training-shorts",
@@ -63,6 +77,9 @@ export const PRODUCTS: Product[] = [
     minQuantity: 12,
     sizes: ["S", "M", "L", "XL", "2XL"],
     imageUrl: "/products/training-shorts.png",
+    audience: "both",
+    retailPrice: 38,
+    retailMinQuantity: 1,
   },
   {
     id: "headgear",
@@ -75,6 +92,7 @@ export const PRODUCTS: Product[] = [
     sizes: ["S/M", "L/XL"],
     imageUrl: "/products/headgear.png",
     featured: true,
+    audience: "team",
   },
   {
     id: "mma-gloves",
@@ -87,6 +105,7 @@ export const PRODUCTS: Product[] = [
     sizes: ["S", "M", "L", "XL"],
     imageUrl: "/products/mma-gloves.png",
     featured: true,
+    audience: "team",
   },
   {
     id: "boxing-gloves",
@@ -99,6 +118,7 @@ export const PRODUCTS: Product[] = [
     sizes: ["10oz", "12oz", "14oz", "16oz"],
     imageUrl: "/products/boxing-gloves.png",
     featured: true,
+    audience: "team",
   },
   {
     id: "shin-guards",
@@ -110,6 +130,7 @@ export const PRODUCTS: Product[] = [
     minQuantity: 6,
     sizes: ["S", "M", "L", "XL"],
     imageUrl: "/products/shin-guards.png",
+    audience: "team",
   },
   {
     id: "focus-mitts",
@@ -121,6 +142,7 @@ export const PRODUCTS: Product[] = [
     minQuantity: 2,
     sizes: ["One Size"],
     imageUrl: "/products/focus-mitts.png",
+    audience: "team",
   },
   {
     id: "mouthguard",
@@ -132,6 +154,9 @@ export const PRODUCTS: Product[] = [
     minQuantity: 24,
     sizes: ["Youth", "Adult"],
     imageUrl: "/products/mouthguard.png",
+    audience: "both",
+    retailPrice: 18,
+    retailMinQuantity: 1,
   },
   {
     id: "premium-mouthguard",
@@ -144,6 +169,9 @@ export const PRODUCTS: Product[] = [
     sizes: ["Youth", "Adult"],
     imageUrl: "/products/premium-mouthguard.png",
     featured: true,
+    audience: "both",
+    retailPrice: 150,
+    retailMinQuantity: 1,
   },
   {
     id: "team-bag",
@@ -155,6 +183,9 @@ export const PRODUCTS: Product[] = [
     minQuantity: 6,
     sizes: ["One Size"],
     imageUrl: "/products/team-bag.png",
+    audience: "both",
+    retailPrice: 45,
+    retailMinQuantity: 1,
   },
   {
     id: "mug-cup",
@@ -167,6 +198,9 @@ export const PRODUCTS: Product[] = [
     sizes: ["One Size"],
     imageUrl: "/products/mug-cup.png",
     featured: true,
+    audience: "both",
+    retailPrice: 18,
+    retailMinQuantity: 1,
   },
   {
     id: "tumbler",
@@ -179,6 +213,9 @@ export const PRODUCTS: Product[] = [
     sizes: ["One Size"],
     imageUrl: "/products/tumbler.png",
     featured: true,
+    audience: "both",
+    retailPrice: 28,
+    retailMinQuantity: 1,
   },
   {
     id: "patch-set",
@@ -190,6 +227,9 @@ export const PRODUCTS: Product[] = [
     minQuantity: 50,
     sizes: ["3\"", "4\"", "5\""],
     imageUrl: "/products/patch-set.png",
+    audience: "both",
+    retailPrice: 10,
+    retailMinQuantity: 3,
   },
 ];
 
@@ -199,3 +239,91 @@ export const CATEGORY_LABELS: Record<ProductCategory, string> = {
   mouthguard: "Mouthguards",
   accessories: "Accessories",
 };
+
+const CATEGORY_FEATURES: Record<ProductCategory, string[]> = {
+  apparel: [
+    "Premium fabrics built for daily training",
+    "Sublimation, screen print, or embroidery options",
+    "Full size run for your entire team",
+  ],
+  gear: [
+    "Competition-grade materials and construction",
+    "Color-matched trim and logo placement",
+    "Sized for youth through adult athletes",
+  ],
+  mouthguard: [
+    "Embedded team logo options",
+    "Youth and adult sizing available",
+    "Bulk team orders with individual fit options",
+  ],
+  accessories: [
+    "Durable construction for daily use",
+    "Ideal for pro shop sales or team gift sets",
+    "Embroidery or full-color print options",
+  ],
+};
+
+const ORDER_FEATURES = [
+  "Upload your gym logo (PNG, AI, PDF, or SVG)",
+  "Design proof sent for approval before production",
+  "Volume discounts — the more you order, the more you save",
+];
+
+export function getProductById(id: string): Product | undefined {
+  return PRODUCTS.find((product) => product.id === id);
+}
+
+export function getRelatedProducts(
+  product: Product,
+  limit = 3
+): Product[] {
+  return PRODUCTS.filter(
+    (item) => item.id !== product.id && item.category === product.category
+  ).slice(0, limit);
+}
+
+export function getProductFeatures(product: Product): string[] {
+  return [...ORDER_FEATURES, ...CATEGORY_FEATURES[product.category]];
+}
+
+export function isRetailAvailable(product: Product): boolean {
+  return product.audience === "retail" || product.audience === "both";
+}
+
+export function isTeamAvailable(product: Product): boolean {
+  return !product.audience || product.audience === "team" || product.audience === "both";
+}
+
+export function getRetailPrice(product: Product): number {
+  return product.retailPrice ?? product.basePrice;
+}
+
+export function getRetailMinQuantity(product: Product): number {
+  return product.retailMinQuantity ?? 1;
+}
+
+export function getRetailProducts(): Product[] {
+  return PRODUCTS.filter(isRetailAvailable);
+}
+
+export function getTeamProducts(): Product[] {
+  return PRODUCTS.filter(isTeamAvailable);
+}
+
+export function getShopRelatedProducts(product: Product, limit = 3): Product[] {
+  return PRODUCTS.filter(
+    (item) =>
+      item.id !== product.id &&
+      item.category === product.category &&
+      isRetailAvailable(item)
+  ).slice(0, limit);
+}
+
+export function getTeamRelatedProducts(product: Product, limit = 3): Product[] {
+  return PRODUCTS.filter(
+    (item) =>
+      item.id !== product.id &&
+      item.category === product.category &&
+      isTeamAvailable(item)
+  ).slice(0, limit);
+}

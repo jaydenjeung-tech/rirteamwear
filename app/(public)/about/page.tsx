@@ -163,14 +163,14 @@ export default function AboutPage() {
             we&apos;re ready to help.
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
-            <Button href="/contact" size="lg">
-              Get a Quote
+            <Button href="/team" size="lg">
+              Team Orders
             </Button>
             <Link
-              href="/products"
+              href="/shop"
               className="inline-flex items-center justify-center px-8 py-4 text-sm font-semibold uppercase tracking-wider text-rir-black transition-colors hover:text-rir-red"
             >
-              Browse Products
+              Shop Individual
             </Link>
           </div>
         </div>
