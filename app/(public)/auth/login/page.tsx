@@ -1,0 +1,33 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Button } from "@/components/ui/Button";
+
+export const metadata: Metadata = {
+  title: "Log In",
+};
+
+export default function LoginPage() {
+  return (
+    <div className="flex flex-1 items-center justify-center bg-rir-gray px-4 py-20">
+      <div className="w-full max-w-md border border-rir-black/10 bg-white p-8 sm:p-10">
+        <h1 className="mb-2 text-2xl font-black uppercase tracking-tight text-rir-black">
+          Log In
+        </h1>
+        <p className="mb-8 text-sm text-rir-muted">
+          Customer portal coming soon. In the meantime, contact us to place an order.
+        </p>
+        <div className="flex flex-col gap-3">
+          <Button href="/contact" className="w-full">
+            Get a Quote
+          </Button>
+          <Link
+            href="/"
+            className="text-center text-sm font-semibold uppercase tracking-wider text-rir-muted transition-colors hover:text-rir-red"
+          >
+            Back to Home
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}

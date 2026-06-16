@@ -1,0 +1,319 @@
+# RiR Teamwear — Cursor Prompt
+
+## Project Overview
+
+Build a B2B e-commerce platform called **RiR Teamwear** (Raise In Respect) — a custom martial arts gear and apparel ordering platform targeting martial arts gyms, dojos, and teams across the United States.
+
+**Brand identity:**
+- Name: RiR Teamwear
+- Tagline: Custom Martial Arts Gear
+- Philosophy: Raise In Respect — rooted in martial arts culture of mutual respect
+- Logo: Two R's mirroring each other with a human figure (i) in the center, red accent marks
+- Colors: Black (#1a1a1a), White (#ffffff), Red (#E24B4A), Light Gray (#f5f5f5)
+- Typography: Bold, strong, athletic — use Inter or similar sans-serif
+
+---
+
+## Tech Stack
+
+- **Framework:** Next.js 14+ (App Router)
+- **Styling:** Tailwind CSS
+- **Database:** Supabase (PostgreSQL)
+- **Auth:** Supabase Auth
+- **Payments:** Stripe
+- **File Storage:** Supabase Storage (for logo/design file uploads)
+- **Email:** Resend
+- **Language:** TypeScript throughout
+
+---
+
+## User Roles
+
+### 1. Gym / Team (Customer)
+- Self-register with gym name, contact info, sport type
+- Browse products and place custom orders
+- Upload logo/design files
+- Track order status
+- View order history and reorder
+
+### 2. Admin (RiR Staff)
+- Review and approve/reject new gym registrations
+- Receive and manage incoming orders
+- Update order status (Received → Design Review → In Production → Shipped → Delivered)
+- Download customer design files
+- Forward order details to manufacturer
+- Send proof approval requests to customers
+- View dashboard with order metrics
+
+---
+
+## Core Pages & Features
+
+### Public Pages
+- `/` — Landing page
+  - Hero with RiR logo and brand story ("Raise In Respect")
+  - Product categories preview (Apparel, Headgear, Mouthguards, Accessories)
+  - How it works (3 steps: Order → We produce → Delivered to your team)
+  - Testimonials placeholder
+  - CTA: "Get a Quote" / "Start Your Order"
+- `/about` — Brand story
+- `/products` — Product catalog (public browse)
+- `/contact` — Contact form
+
+### Auth Pages
+- `/auth/register` — Gym registration form
+  - Fields: Gym name, owner name, email, phone, address, sport type (multi-select: BJJ, MMA, Karate, Taekwondo, Muay Thai, Boxing, Judo, Wrestling, Krav Maga, Other), estimated monthly order size
+  - Show "Pending approval" message after submit
+- `/auth/login` — Login
+- `/auth/forgot-password`
+
+### Customer Portal (Protected: `/dashboard`)
+- `/dashboard` — Overview: active orders, recent activity
+- `/dashboard/products` — Browse products with pricing tiers
+- `/dashboard/order/new` — New order form
+  - Select product type and items
+  - Enter quantities per size (XS–3XL)
+  - Upload logo file (PNG, AI, PDF, SVG — max 20MB)
+  - Add design notes / special instructions
+  - Select delivery deadline
+  - Price estimate calculator (auto-updates as quantity changes)
+  - Submit order
+- `/dashboard/orders` — Order list with status badges
+- `/dashboard/orders/[id]` — Order detail
+  - Status timeline
+  - Proof approval (when admin sends proof, customer can Approve or Request Revision)
+  - Download invoice
+- `/dashboard/profile` — Gym profile management
+
+### Admin Portal (Protected: `/admin`)
+- `/admin` — Dashboard
+  - Metrics: pending registrations, active orders, orders by status
+- `/admin/registrations` — Gym approval queue
+  - List of pending gyms with details
+  - Approve / Reject with optional note
+- `/admin/orders` — All orders
+  - Filter by status, gym, date
+  - Update order status
+  - Download customer logo files
+  - Send proof to customer (upload proof file + message)
+- `/admin/orders/[id]` — Order detail management
+- `/admin/gyms` — All approved gyms
+- `/admin/products` — Product and pricing management
+
+---
+
+## Database Schema (Supabase)
+
+```sql
+-- Gyms (customers)
+create table gyms (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  owner_name text not null,
+  email text not null unique,
+  phone text,
+  address text,
+  sport_types text[], -- ['BJJ', 'MMA', etc.]
+  monthly_volume text, -- estimated
+  status text default 'pending', -- pending | approved | rejected
+  rejection_note text,
+  created_at timestamptz default now()
+);
+
+-- Products
+create table products (
+  id uuid primary key default gen_random_uuid(),
+  name text not null, -- e.g. "Custom T-Shirt", "Rashguard", "Mouthguard"
+  category text not null, -- apparel | headgear | mouthguard | accessories
+  description text,
+  base_price numeric not null,
+  min_quantity integer default 12,
+  sizes text[], -- ['XS','S','M','L','XL','2XL','3XL']
+  active boolean default true,
+  image_url text,
+  created_at timestamptz default now()
+);
+
+-- Orders
+create table orders (
+  id uuid primary key default gen_random_uuid(),
+  order_number text unique not null, -- RIR-2026-0001
+  gym_id uuid references gyms(id),
+  status text default 'received',
+  -- received | design_review | proof_sent | proof_approved | in_production | shipped | delivered | cancelled
+  items jsonb not null, -- [{product_id, product_name, quantities: {S:10, M:20}, unit_price, total}]
+  design_notes text,
+  logo_file_path text, -- supabase storage path
+  proof_file_path text,
+  deadline date,
+  subtotal numeric,
+  total numeric,
+  tracking_number text,
+  internal_notes text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- Order status history
+create table order_status_history (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid references orders(id),
+  status text not null,
+  note text,
+  created_by text, -- 'admin' or 'system'
+  created_at timestamptz default now()
+);
+
+-- Proof approvals
+create table proof_approvals (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid references orders(id),
+  proof_file_path text,
+  message text,
+  response text, -- 'approved' | 'revision'
+  revision_note text,
+  sent_at timestamptz default now(),
+  responded_at timestamptz
+);
+```
+
+---
+
+## Pricing Logic
+
+Tiered pricing by quantity:
+
+```typescript
+const getPricePerUnit = (basePrice: number, quantity: number) => {
+  if (quantity >= 500) return basePrice * 0.70  // 30% off
+  if (quantity >= 200) return basePrice * 0.80  // 20% off
+  if (quantity >= 100) return basePrice * 0.85  // 15% off
+  if (quantity >= 50)  return basePrice * 0.90  // 10% off
+  return basePrice                               // base price
+}
+```
+
+Show live price estimate as customer enters quantities.
+
+---
+
+## Key UI Components to Build
+
+1. **OrderStatusBadge** — color-coded status pill
+2. **QuantityMatrix** — size × quantity grid input for orders
+3. **PriceCalculator** — live updating price estimate
+4. **FileUpload** — drag-and-drop with preview, accepts PNG/AI/PDF/SVG
+5. **OrderTimeline** — vertical status history timeline
+6. **GymApprovalCard** — admin registration review card
+7. **ProofApprovalModal** — customer proof review interface
+
+---
+
+## Email Notifications (via Resend)
+
+Trigger emails for:
+- Gym registration received → gym owner
+- Gym approved → gym owner (with login link)
+- Gym rejected → gym owner (with note)
+- Order received → admin + gym owner
+- Proof sent → gym owner (with proof download link)
+- Proof approved → admin
+- Order shipped → gym owner (with tracking)
+- Order delivered → gym owner
+
+---
+
+## Design Direction
+
+**Aesthetic:** Dark, bold, athletic. This is a brand built on martial arts culture — strength, discipline, respect.
+
+- Background: Near-black (#111111) for hero sections, white for content areas
+- Primary accent: Red (#E24B4A)
+- Typography: Bold weight headings, clean body text
+- No rounded corners on primary UI elements — sharp, strong
+- Minimal decoration — let the product photos and brand mark do the work
+- Mobile-first — gym owners often browse on phones
+
+**Landing page hero:**
+- Full-width dark background
+- Large RiR logo centered
+- "Raise In Respect" in bold white
+- "Custom Martial Arts Gear for Your Team" subtitle in gray
+- Two CTAs: "Start Your Order" (red button) + "Browse Products" (outline button)
+
+---
+
+## Folder Structure
+
+```
+app/
+  (public)/
+    page.tsx              # Landing
+    about/page.tsx
+    products/page.tsx
+    contact/page.tsx
+  (auth)/
+    login/page.tsx
+    register/page.tsx
+  (customer)/
+    dashboard/
+      page.tsx
+      products/page.tsx
+      order/new/page.tsx
+      orders/
+        page.tsx
+        [id]/page.tsx
+      profile/page.tsx
+  (admin)/
+    admin/
+      page.tsx
+      registrations/page.tsx
+      orders/
+        page.tsx
+        [id]/page.tsx
+      gyms/page.tsx
+      products/page.tsx
+components/
+  ui/                     # shadcn/ui base components
+  orders/
+  products/
+  gym/
+  admin/
+lib/
+  supabase/
+    client.ts
+    server.ts
+  stripe/
+  resend/
+  pricing.ts
+types/
+  index.ts
+```
+
+---
+
+## Implementation Order
+
+Build in this sequence:
+
+1. **Supabase setup** — schema, RLS policies, storage bucket (`design-files`)
+2. **Auth** — Supabase Auth with gym registration → pending approval flow
+3. **Landing page** — public facing, brand identity
+4. **Admin: Registration approval** — approve/reject gyms
+5. **Customer: Product browse + New order form** — with file upload and price calculator
+6. **Admin: Order management** — status updates, proof sending
+7. **Customer: Order tracking + Proof approval**
+8. **Email notifications** — Resend integration
+9. **Stripe payments** — optional in MVP, can invoice manually first
+
+---
+
+## Notes
+
+- All UI in English only
+- Admin is a single role — no need for multi-admin hierarchy in MVP
+- Logo file uploads go to Supabase Storage bucket `design-files` under path `orders/{order_id}/logo`
+- Order numbers auto-generate as `RIR-{YEAR}-{4-digit-sequence}` (e.g. RIR-2026-0001)
+- RLS: gyms can only see their own orders; admin bypasses RLS via service role
+- Start with manual Stripe invoicing in MVP — add online payment in v2
+- Read `node_modules/next/dist/docs/` before writing Next.js code — this project uses Next.js 16 with breaking changes from earlier versions
